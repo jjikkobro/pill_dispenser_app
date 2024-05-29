@@ -1,4 +1,5 @@
 import cv2
+import time 
 
 def show_camera():
     # 카메라 모듈 활성화
