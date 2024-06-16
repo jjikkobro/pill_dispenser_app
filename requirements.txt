@@ -1,0 +1,5 @@
+pydub
+dotenv
+pymysql
+serial
+azure-cognitiveservices-speech
