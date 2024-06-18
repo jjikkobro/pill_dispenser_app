@@ -3,4 +3,6 @@ dotenv
 pymysql
 serial
 ffmpeg
+dearpygui
+requests
 azure-cognitiveservices-speech

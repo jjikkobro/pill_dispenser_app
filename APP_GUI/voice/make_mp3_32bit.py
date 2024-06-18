@@ -3,16 +3,16 @@ from dotenv import dotenv_values
 from ast import literal_eval
 from flask import Flask, jsonify, send_file, request
 from pydub import AudioSegment
-import azure.cognitiveservices.speech as speechsdk
+
 
 basedir = os.getcwd()
 env = dotenv_values()
 speech_key = env['speech_key']
 speech_region = env['speech_region']
-speaker = ['']
 output_folder = os.path.join('voice','tts_output')
 os.makedirs(output_folder, exist_ok=True)
 app = Flask(__name__)
+
 
 
 def make_mp3_file(text, file_name=None):
