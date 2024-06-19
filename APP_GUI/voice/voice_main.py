@@ -5,6 +5,9 @@ import os
 import pymysql
 from pydub import AudioSegment
 from . import make_mp3
+import sounddevice as sd
+import numpy as np
+from scipy.io.wavfile import write
 # import simpleaudio as sa
 
 
@@ -126,6 +129,10 @@ class Pill_Genine():
       connection.commit()
       connection.close()
       
-    def record():
-      user_response = ''
-      return user_response
+    def record(filename, duration, samplerate=44100):
+      print(f"Recording for {duration} seconds...")
+      audio = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=2, dtype='int16')
+      sd.wait() 
+      write(filename, samplerate, audio)
+      print(f"Audio recording saved as {filename}")
+      
