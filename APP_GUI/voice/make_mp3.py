@@ -1,18 +1,15 @@
 import os
 from dotenv import dotenv_values
 from ast import literal_eval
+import azure.cognitiveservices.speech as speechsdk
 
 basedir = os.getcwd()
 env = dotenv_values()
 speech_key = env['speech_key']
 speech_region = env['speech_region']
 speaker = ['']
-OS_bit = env['bit']
 output_folder = os.path.join('voice','tts_output')
 os.makedirs(output_folder, exist_ok=True)
-
-if OS_bit == "64":
-    import azure.cognitiveservices.speech as speechsdk
 
 def make_mp3_file(text, file_name=None):
     speech_config = speechsdk.SpeechConfig(subscription = speech_key, region = speech_region)
@@ -39,3 +36,23 @@ def make_mp3_file(text, file_name=None):
                 return False
     return file_name
                 
+def wav_to_text(input_path):
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
+    speech_config.speech_recognition_language = "ko-KR"
+    audio_config = speechsdk.audio.AudioConfig(filename=input_path)
+    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
+
+    result = speech_recognizer.recognize_once()
+
+    if result.reason == speechsdk.ResultReason.RecognizedSpeech:
+        print("Recognized: {}".format(result.text))
+        return result.text
+    elif result.reason == speechsdk.ResultReason.NoMatch:
+        print("No speech could be recognized: {}".format(result.no_match_details))
+    elif result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = result.cancellation_details
+        print("Speech Recognition canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            print("Error details: {}".format(cancellation_details.error_details))
+            print("Did you set the speech resource key and region values?")
+    return ""

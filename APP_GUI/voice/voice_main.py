@@ -129,10 +129,12 @@ class Pill_Genine():
       connection.commit()
       connection.close()
       
-    def record(filename, duration, samplerate=44100):
-      print(f"Recording for {duration} seconds...")
+    def record(duration, samplerate=44100):
+      sd.default.device = (1,None)
+      output_path = os.path.join(__file__,'audio_input/record.wav')
       audio = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=2, dtype='int16')
       sd.wait() 
-      write(filename, samplerate, audio)
-      print(f"Audio recording saved as {filename}")
-      
+      write(output_path, samplerate, audio)
+    
+    def recoginze(self, wav_path): 
+      return make_mp3.wave_to_text(wav_path)

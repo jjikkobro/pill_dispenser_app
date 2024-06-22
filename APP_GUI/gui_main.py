@@ -24,23 +24,24 @@ def set_global_font():
        
 
 def open_index_page():
-    with dpg.window(label="Index Page", width=800, height=600):
-        dpg.add_button(label="예약 하기", callback= reservation, width=700, height=190)
-        dpg.add_button(label="바로 투약", callback=give_pill, width=700, height=190)
-        dpg.add_button(label="자동 투약", callback=lambda: period_dosage(), width=700, height=190)
+    with dpg.window(label="Index Page", width=1024, height=600):
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="예약 하기", callback= reservation, width=340, height=300)
+            dpg.add_button(label="바로 투약", callback=give_pill, width=340, height=300)
+            dpg.add_button(label="자동 투약", callback=lambda: period_dosage(), width=340, height=300)
         dpg.add_button(label="로그아웃", callback=logout)
 
 def open_once_dosage_page():
-    with dpg.window(label="바로 투약", width=800, height=600, tag="once_dosage_window"):
+    with dpg.window(label="바로 투약", width=1024, height=600, tag="once_dosage_window"):
         dpg.add_text("어떤 통의 약을 꺼내시겠습니까?")
         with dpg.group(horizontal=True):
-            dpg.add_button(label="1번 통", callback=send_serial, user_data={"command":"once","conatiner_number":1}, width=230, height=300)
-            dpg.add_button(label="2번 통", callback=send_serial, user_data={"command":"once","conatiner_number":2}, width=230, height=300)
-            dpg.add_button(label="3번 통", callback=send_serial, user_data={"command":"once","conatiner_number":3}, width=230, height=300)
+            dpg.add_button(label="1번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":1}), width=340, height=300)
+            dpg.add_button(label="2번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":2}), width=340, height=300)
+            dpg.add_button(label="3번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":3}), width=340, height=300)
         dpg.add_button(label="뒤로 가기", callback=lambda: return_to_index(delete_from="once"))
         
 def open_period_dosage_page(rows, curs):
-    with dpg.window(label="자동 투약", width=800, height=600, tag="period_dosage_window"):
+    with dpg.window(label="자동 투약", width=1024, height=600, tag="period_dosage_window"):
         dpg.add_text("자동 투약이 활성화 되었습니다.")
         
         with dpg.table(header_row=True, borders_innerH=True, borders_outerH=True, borders_innerV=True, borders_outerV=True):
@@ -83,12 +84,12 @@ def period_dosage(is_refresh=None):
     open_period_dosage_page(rows, curs)
 
 def send_serial(user_data):
-    if user_data["command"] == "once":
-        container_number = user_data['container_number']
+    if user_data.get("command") == "once":
+        container_number = user_data.get('container_number')
         message = b'%d' % container_number
         ser.write(message)
     
-    elif user_data["command"] == "period":
+    elif user_data.get("command") == "period":
         rows = user_data["data"]
         curs = user_data["curs"]
         print("신호 확인 및 전송 시작")
@@ -123,7 +124,7 @@ def give_pill():
     
 
 def open_reservation_page():
-    with dpg.window(label="예약 페이지", width=800, height=600):
+    with dpg.window(label="예약 페이지", width=1024, height=600):
         dpg.add_text("예약 중 입니다.")
 
 def reservation():
@@ -131,9 +132,10 @@ def reservation():
     open_reservation_page()
     Genine = Pill_Genine()
 
-    # user_response = Genine.record()
+    #Genie.play()
     print("예약을 희망하시면, 컨테이너 번호, 약 이름, 반복 요일과 시간을 말씀해주세요.")
-    user_response = input()
+    user_response = Genine.record()
+    
 
     message = Genine.message_maker(user_response)
     result = Genine.generate_chat_completion(message)
@@ -179,7 +181,7 @@ def login(sender, app_data):
         dpg.set_value("status", is_user['message'])
 
 def open_login_page():
-    with dpg.window(label="Login", width=800, height=600, tag="login_page"):
+    with dpg.window(label="Login", width=1024, height=600, tag="login_page"):
         dpg.add_text("아이디와 비밀번호를 입력하세요.")
         
         dpg.add_input_text(label="아이디", tag="username")
@@ -191,7 +193,7 @@ def open_login_page():
 def main():     
     set_global_font()
     open_login_page()    
-    dpg.create_viewport(title='Pill_Dispenser_APP', width=800, height=600)
+    dpg.create_viewport(title='Pill_Dispenser_APP', width=1024, height=600)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.start_dearpygui()

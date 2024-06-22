@@ -1,8 +1,11 @@
 pydub
-dotenv
+python-dotenv
 pymysql
-serial
+pyserial
 ffmpeg
-dearpygui
+django
+#dearpygui
 requests
 azure-cognitiveservices-speech
+sounddevice
+scipy
