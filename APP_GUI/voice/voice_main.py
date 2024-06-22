@@ -8,6 +8,7 @@ from . import make_mp3
 import sounddevice as sd
 import numpy as np
 from scipy.io.wavfile import write
+import re
 # import simpleaudio as sa
 
 
@@ -48,6 +49,7 @@ class Pill_Genine():
               3. You should response name of the pill in Korean. 
               4. If there are no information in script, You should response empty string as value but keep the keys.
               5. If user says no in script, You should response this {"information":""} 
+              6. container number and repetition are must be one of the below example.
               
               Example Format : {
                 "information" : {
@@ -72,6 +74,7 @@ class Pill_Genine():
               1. You should keep the given result and just put added value from the script.
               2. You should parse informations as json format. 
               3. You should response name of the pill in Korean. 
+              4. container number and repetition are must be one of the below example.
               
               Example Format : {
                 "information" : {
@@ -129,12 +132,26 @@ class Pill_Genine():
       connection.commit()
       connection.close()
       
-    def record(duration, samplerate=44100):
+    def record(self, duration, samplerate=44100):
       sd.default.device = (1,None)
-      output_path = os.path.join(__file__,'audio_input/record.wav')
+      basedir = os.getcwd()
+      output_path = os.path.join(basedir,'voice/audio_input/record.wav')
       audio = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=2, dtype='int16')
       sd.wait() 
       write(output_path, samplerate, audio)
+      return output_path
     
     def recoginze(self, wav_path): 
-      return make_mp3.wave_to_text(wav_path)
+      return make_mp3.wav_to_text(wav_path)
+    
+    def replace_similar_phrases(self, text):
+      patterns = {
+        r"일본통|일본동|일번동|일번통": "1번통",
+        r"이본통|이번통|이번동|이본동": "2번통",
+        r"삼번통|삼본통|삼번동|삼본동": "3번통",
+        r"내일": "매일"
+      }
+      for pattern, replacement in patterns.items():
+            text = re.sub(pattern, replacement, text)
+    
+      return text

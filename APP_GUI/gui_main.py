@@ -6,12 +6,15 @@ from ast import literal_eval
 from hardware import send_to_arduino as Ardu
 import time
 from datetime import datetime
+import threading
 
 kor_font_file = load_statics.kor_font
 soundwave_gif_file = load_statics.soundwave_gif
-user_id = None
+user_id, username = None, None
 dosing_data = None
 conn, ser = None, None
+stop_signal = False
+
 weekdays = ['mon','tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
 dpg.create_context()
@@ -39,7 +42,12 @@ def open_once_dosage_page():
             dpg.add_button(label="2번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":2}), width=340, height=300)
             dpg.add_button(label="3번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":3}), width=340, height=300)
         dpg.add_button(label="뒤로 가기", callback=lambda: return_to_index(delete_from="once"))
-        
+
+def stop_loop_callback():
+    global stop_signal
+    stop_signal = True
+    return_to_index(delete_from="period")
+     
 def open_period_dosage_page(rows, curs):
     with dpg.window(label="자동 투약", width=1024, height=600, tag="period_dosage_window"):
         dpg.add_text("자동 투약이 활성화 되었습니다.")
@@ -58,9 +66,9 @@ def open_period_dosage_page(rows, curs):
                     dpg.add_text(row['repetition'])
         with dpg.group(horizontal=True):            
             dpg.add_button(label="다시 불러오기", callback=lambda: period_dosage(is_refresh=True))
-            dpg.add_button(label="끝내기", callback=lambda: return_to_index(delete_from="period"))
+            dpg.add_button(label="끝내기", callback=lambda: stop_loop_callback())
             
-    send_serial(user_data={"command":"period","data":rows,"cursor":curs})
+    start_serial_thread(user_data={"command":"period","data":rows,"curs":curs})
         
 def return_to_index(delete_from):
     if delete_from == "period":
@@ -84,6 +92,9 @@ def period_dosage(is_refresh=None):
     open_period_dosage_page(rows, curs)
 
 def send_serial(user_data):
+    global stop_signal
+    stop_signal = False
+    
     if user_data.get("command") == "once":
         container_number = user_data.get('container_number')
         message = b'%d' % container_number
@@ -93,12 +104,7 @@ def send_serial(user_data):
         rows = user_data["data"]
         curs = user_data["curs"]
         print("신호 확인 및 전송 시작")
-        while True:     
-            # if button.is_pressed:
-            #     rows = Ardu.get_data(curs, user_id)
-            #     print(rows)
-            #     print('Get new data')
-                
+        while not stop_signal:                     
             current_time = datetime.now().strftime('%H:%M')
             current_date = weekdays[datetime.now().weekday()]
             
@@ -107,7 +113,7 @@ def send_serial(user_data):
                 user_id, medicine, container, dosing_time, finished, repetition = row.values()
                 if ('daily' in repetition) or current_date in repetition:
                     if str(dosing_time).rstrip(':00') == str(current_time) and finished == 0:    
-                        print(f"사용자: {user_id}, 약 이름: {medicine}, 약 통 번호: {container}, 시간: {dosing_time}")
+                        print(f"사용자: {username}, 약 이름: {medicine}, 약 통 번호: {container}, 시간: {dosing_time}")
                         curs.execute(f"UPDATE notes_note set finished=1 where container={container}")
                         row['finished'] = 1
                         ser.write(b'1') #아두이노로 신호 전송
@@ -117,6 +123,8 @@ def send_serial(user_data):
                     print('오늘이 아님', repetition)
                     continue
     
+def start_serial_thread(user_data):
+    threading.Thread(target=send_serial, args=(user_data,)).start()
 
 def give_pill():
     dpg.delete_item("index_page")
@@ -124,19 +132,27 @@ def give_pill():
     
 
 def open_reservation_page():
-    with dpg.window(label="예약 페이지", width=1024, height=600):
-        dpg.add_text("예약 중 입니다.")
+    with dpg.window(label="예약 페이지", width=1024, height=600, tag="reservation_page"):
+        dpg.add_text("",  tag="reservation_text")
+
+def update_reservation_text(text):
+    if dpg.does_item_exist("reservation_text"):
+        dpg.set_value("reservation_text", text)
 
 def reservation():
     dpg.delete_item("index_page")
     open_reservation_page()
     Genine = Pill_Genine()
 
-    #Genie.play()
-    print("예약을 희망하시면, 컨테이너 번호, 약 이름, 반복 요일과 시간을 말씀해주세요.")
-    user_response = Genine.record()
-    
+    #Genie.play_mp3(file_name="start")
+    update_reservation_text("예약을 희망하시면, 컨테이너 번호, 약 이름, 반복 요일과 시간을 말씀해주세요.")
+    time.sleep(5)
+    update_reservation_text("녹음 중 입니다...")
+    record_path = Genine.record(duration=8)
+    user_response = Genine.recoginze(record_path)
+    user_response = Genine.replace_similar_phrases(user_response)
 
+    update_reservation_text(user_response)
     message = Genine.message_maker(user_response)
     result = Genine.generate_chat_completion(message)
 
@@ -144,20 +160,24 @@ def reservation():
     while(not save):
         result = literal_eval(result)
         if result['information'] == '':
-            print("취소되었습니다.")
+            update_reservation_text("취소되었습니다.")
+            time.sleep(1)
             break
         key_value = Genine.check_result(result['information'])
         if type(key_value) == str:
             question = Genine.play_mp3(file_name=key_value)
-            print(key_value+'에 대한 정보가 없습니다. 다시 말씀 해주세요.')
-            user_response = input()
+            update_reservation_text(f"{key_value}에 대한 정보가 없습니다. 다시 말씀 해주세요.")
+            record_path = Genine.record(duration=5)
+            user_response = Genine.recoginze(record_path)
+
+            update_reservation_text(user_response)
             message = Genine.message_maker(user_response, omission=key_value, prev_result=result['information'], re=True)
             result = Genine.generate_chat_completion(message)        
         else:
-            print(result)
+            update_reservation_text("저장 중입니다...")
             question = Genine.play_mp3(text=result['tts'], file_name="final")
             Genine.save_to_database(key_value, result)
-            print("저장되었습니다.")
+            update_reservation_text("저장되었습니다.")
             save = True
     dpg.delete_item("reservation_page")
     open_index_page()
@@ -167,7 +187,7 @@ def logout(sender, app_data):
     dpg.show_item("login_page")
 
 def login(sender, app_data):
-    global user_id
+    global user_id, username
     username = dpg.get_value("username")
     password = dpg.get_value("password")
     

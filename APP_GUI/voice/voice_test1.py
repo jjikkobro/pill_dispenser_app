@@ -6,6 +6,11 @@ from dotenv import dotenv_values
 from ast import literal_eval
 import azure.cognitiveservices.speech as speechsdk
 
+import logging
+
+# 디버깅 로깅 설정
+logging.basicConfig(level=logging.DEBUG)
+
 basedir = os.getcwd()
 env = dotenv_values()
 speech_key = env['speech_key']
@@ -68,7 +73,5 @@ def recognize_from_microphone():
             print("Error details: {}".format(cancellation_details.error_details))
             print("Did you set the speech resource key and region values?")
 
-recognize_from_microphone()
-
 if __name__=="__main__":
-    print(recognize_from_microphone())
+    print(wav_to_text("/home/hoseo/pill_dispenser_app/test.wav"))
