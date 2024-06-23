@@ -7,6 +7,7 @@ from hardware import send_to_arduino as Ardu
 import time
 from datetime import datetime
 import threading
+import sys
 
 kor_font_file = load_statics.kor_font
 soundwave_gif_file = load_statics.soundwave_gif
@@ -38,9 +39,9 @@ def open_once_dosage_page():
     with dpg.window(label="바로 투약", width=1024, height=600, tag="once_dosage_window"):
         dpg.add_text("어떤 통의 약을 꺼내시겠습니까?")
         with dpg.group(horizontal=True):
-            dpg.add_button(label="1번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":1}), width=340, height=300)
-            dpg.add_button(label="2번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":2}), width=340, height=300)
-            dpg.add_button(label="3번 통", callback=lambda: send_serial(user_data={"command":"once","conatiner_number":3}), width=340, height=300)
+            dpg.add_button(label="1번 통", callback=lambda: send_serial(user_data={"command":"once","container_number":1}), width=340, height=300)
+            dpg.add_button(label="2번 통", callback=lambda: send_serial(user_data={"command":"once","container_number":2}), width=340, height=300)
+            dpg.add_button(label="3번 통", callback=lambda: send_serial(user_data={"command":"once","container_number":3}), width=340, height=300)
         dpg.add_button(label="뒤로 가기", callback=lambda: return_to_index(delete_from="once"))
 
 def stop_loop_callback():
@@ -144,11 +145,10 @@ def reservation():
     open_reservation_page()
     Genine = Pill_Genine()
 
-    #Genie.play_mp3(file_name="start")
     update_reservation_text("예약을 희망하시면, 컨테이너 번호, 약 이름, 반복 요일과 시간을 말씀해주세요.")
-    time.sleep(5)
+    Genine.play_mp3(file_name="start")
     update_reservation_text("녹음 중 입니다...")
-    record_path = Genine.record(duration=8)
+    record_path = Genine.record(duration=5)
     user_response = Genine.recoginze(record_path)
     user_response = Genine.replace_similar_phrases(user_response)
 
@@ -165,7 +165,7 @@ def reservation():
             break
         key_value = Genine.check_result(result['information'])
         if type(key_value) == str:
-            question = Genine.play_mp3(file_name=key_value)
+            Genine.play_mp3(file_name=key_value)
             update_reservation_text(f"{key_value}에 대한 정보가 없습니다. 다시 말씀 해주세요.")
             record_path = Genine.record(duration=5)
             user_response = Genine.recoginze(record_path)
@@ -175,7 +175,8 @@ def reservation():
             result = Genine.generate_chat_completion(message)        
         else:
             update_reservation_text("저장 중입니다...")
-            question = Genine.play_mp3(text=result['tts'], file_name="final")
+            Genine.play_mp3(text=result['tts'], file_name="final")
+            time.sleep(2)
             Genine.save_to_database(key_value, result)
             update_reservation_text("저장되었습니다.")
             save = True
@@ -210,9 +211,15 @@ def open_login_page():
         dpg.add_button(label="로그인", callback=login)
         dpg.add_text("", tag="status")
 
-def main():     
+def main(is_test = None):     
+    global user_id, user_name
     set_global_font()
-    open_login_page()    
+    if is_test:
+        user_id = 1
+        user_name = "test"
+        open_index_page()
+    else:
+        open_login_page()    
     dpg.create_viewport(title='Pill_Dispenser_APP', width=1024, height=600)
     dpg.setup_dearpygui()
     dpg.show_viewport()
@@ -220,4 +227,5 @@ def main():
     dpg.destroy_context()
 
 if __name__ == "__main__":
-    main()
+    is_test = sys.argv[1]
+    main(is_test)

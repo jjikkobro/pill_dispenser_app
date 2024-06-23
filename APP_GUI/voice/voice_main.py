@@ -3,7 +3,7 @@ from dotenv import dotenv_values
 from ast import literal_eval
 import os
 import pymysql
-from pydub import AudioSegment
+import simpleaudio as sa
 from . import make_mp3
 import sounddevice as sd
 import numpy as np
@@ -19,6 +19,9 @@ class Pill_Genine():
       self.gpt_4o_key = env['gpt_4o_apikey']
       self.gpt_4o_endpoint = env['gpt_4o_endpoint']
       self.db_config = literal_eval(env['db_config'])
+      self.base_dir = "/home/hoseo/pill_dispenser_app/APP_GUI"
+      self.silence_threshold = 500
+      self.silence_duration = 1
         
     def generate_chat_completion(self, messages,  temperature=0.2, max_tokens=None):
       post_fields = {
@@ -114,15 +117,9 @@ class Pill_Genine():
         if file_name == False:
           return False
         
-      audio = AudioSegment.from_file(f"voice/tts_output/{file_name}.wav", format="wav")
-      audio_data = audio.raw_data
-      # sample_rate = audio.frame_rate
-      # channels = audio.channels
-      # sample_width = audio.sample_width
-
-      # # simpleaudio
-      # play_obj = sa.play_buffer(audio_data, channels, sample_width, sample_rate)
-      # play_obj.wait_done()
+      wave_obj = sa.WaveObject.from_wave_file(f"{self.base_dir}/voice/tts_output/{file_name}.wav")
+      play_obj = wave_obj.play()
+      play_obj.wait_done()
       
     def save_to_database(self, key_value, result):
       connection = pymysql.connect(**self.db_config)
@@ -131,9 +128,9 @@ class Pill_Genine():
           cursor.execute(query, list(result['information'].values()))
       connection.commit()
       connection.close()
-      
+    
     def record(self, duration, samplerate=44100):
-      sd.default.device = (1,None)
+      sd.default.device = "HK 1080 Cam"
       basedir = os.getcwd()
       output_path = os.path.join(basedir,'voice/audio_input/record.wav')
       audio = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=2, dtype='int16')

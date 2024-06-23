@@ -1,10 +1,13 @@
 import sounddevice as sd
+import simpleaudio as sa
 import numpy as np
 from scipy.io.wavfile import write
 import os
 from dotenv import dotenv_values
 from ast import literal_eval
 import azure.cognitiveservices.speech as speechsdk
+from pydub import AudioSegment
+from collections import deque
 
 import logging
 
@@ -19,14 +22,32 @@ speaker = ['']
 output_folder = os.path.join('voice','tts_output')
 os.makedirs(output_folder, exist_ok=True)
 
+def is_silent(data):
+    return np.abs(data).mean() < 500
 
-def record(duration, samplerate=44100):
-    sd.default.device = (1,None)
+def record(samplerate=44100):
+    print("녹음 시작합니다.")
+    sd.default.device = "HK 1080 Cam"
     basedir = os.getcwd()
     output_path = os.path.join(basedir,'voice/audio_input/record.wav')
-    audio = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=2, dtype='int16')
-    sd.wait() 
+    audio = sd.rec(int(1 * samplerate), samplerate=samplerate, channels=2, dtype='int16')
+    sd.wait()
+    
+    buffer = deque(maxlen=int(1 * samplerate))
+    buffer.extend(audio[-int(1 * samplerate):])
+
+    while True:
+        chunk = sd.rec(int(1 * samplerate), samplerate=samplerate, channels=2, dtype='int16')
+        sd.wait()
+        audio = np.concatenate((audio, chunk))
+        buffer.extend(chunk)
+        
+        if is_silent(np.array(buffer)):
+            print("녹음종료")
+            break
+
     write(output_path, samplerate, audio)
+    return output_path
     
 def wav_to_text(input_path):
     speech_config = speechsdk.SpeechConfig(subscription="af2aff1d03384f3c87e9fb93a170b424", region="centralus")
@@ -73,5 +94,10 @@ def recognize_from_microphone():
             print("Error details: {}".format(cancellation_details.error_details))
             print("Did you set the speech resource key and region values?")
 
+def play_mp3(file_name=None, text=None):
+    wave_obj = sa.WaveObject.from_wave_file(f"voice/tts_output/{file_name}.wav")
+    play_obj = wave_obj.play()
+    play_obj.wait_done()
+
 if __name__=="__main__":
-    print(wav_to_text("/home/hoseo/pill_dispenser_app/test.wav"))
+    record()
