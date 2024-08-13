@@ -20,4 +20,4 @@ def get_data(curs, user_id):
     return rows
 
 def connect_to_arduino():
-    return serial.Serial('/dev/ttyACM0', 9600)
+    return serial.Serial('/dev/ttyAMA0', 115200)
