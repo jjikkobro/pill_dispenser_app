@@ -68,7 +68,5 @@ def recognize_from_microphone():
             print("Error details: {}".format(cancellation_details.error_details))
             print("Did you set the speech resource key and region values?")
 
-recognize_from_microphone()
-
 if __name__=="__main__":
-    print(recognize_from_microphone())
+    print(wav_to_text("/home/jung/pill_dispenser_app/test.wav"))
