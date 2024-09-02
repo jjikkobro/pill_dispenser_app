@@ -38,14 +38,13 @@ def make_mp3_file(text, file_name=None):
                 
 def wav_to_text(input_path):
     speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
-    speech_config.speech_recognition_language = "ko-KR"
-    audio_config = speechsdk.audio.AudioConfig(filename=input_path)
+    speech_config.speech_recognition_language="ko-KR"
+    audio_config = speechsdk.AudioConfig(filename=input_path)
     speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
 
-    result = speech_recognizer.recognize_once()
+    result = speech_recognizer.recognize_once_async().get()
 
     if result.reason == speechsdk.ResultReason.RecognizedSpeech:
-        print("Recognized: {}".format(result.text))
         return result.text
     elif result.reason == speechsdk.ResultReason.NoMatch:
         print("No speech could be recognized: {}".format(result.no_match_details))
