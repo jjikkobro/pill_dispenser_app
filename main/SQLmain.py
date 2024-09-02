@@ -67,7 +67,6 @@ if __name__ == "__main__":
     user_id = get_user_id(cursor, name)
     
     rows = get_data(cursor, user_id)
-    quit()
     # 시리얼 포트와 통신 속도 설정
     ser = serial.Serial('/dev/ttyACM0', 9600)  # '/dev/ttyUSB0'는 아두이노가 연결된 포트
     time.sleep(2)  # 시리얼 통신 안정화 시간

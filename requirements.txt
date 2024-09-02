@@ -1,0 +1,11 @@
+pydub
+python-dotenv
+pymysql
+pyserial
+ffmpeg
+django
+#dearpygui
+requests
+azure-cognitiveservices-speech
+sounddevice
+scipy
