@@ -73,8 +73,10 @@ def open_period_dosage_page(rows, curs):
         
 def return_to_index(delete_from):
     if delete_from == "period":
+        ser.close()
         dpg.delete_item("period_dosage_window")
     elif delete_from == "once":
+        ser.close()
         dpg.delete_item("once_dosage_window")
     open_index_page()
 
@@ -98,9 +100,12 @@ def send_serial(user_data):
     
     if user_data.get("command") == "once":
         container_number = user_data.get('container_number')
-        message = b'%d' % container_number
-        ser.write(message)
-    
+        print(container_number)
+        message = str(container_number).encode()
+        for i in range(1,10):
+            ser.write(message)
+            time.sleep(0.5)
+            
     elif user_data.get("command") == "period":
         rows = user_data["data"]
         curs = user_data["curs"]
@@ -117,7 +122,11 @@ def send_serial(user_data):
                         print(f"사용자: {username}, 약 이름: {medicine}, 약 통 번호: {container}, 시간: {dosing_time}")
                         curs.execute(f"UPDATE notes_note set finished=1 where container={container}")
                         row['finished'] = 1
-                        ser.write(b'1') #아두이노로 신호 전송
+                        message = str(container).encode()
+                        for i in range(1, 10):
+                            print(message)
+                            ser.write(message)
+                            time.sleep(0.5)
                     else:
                         continue
                 else:
@@ -128,7 +137,10 @@ def start_serial_thread(user_data):
     threading.Thread(target=send_serial, args=(user_data,)).start()
 
 def give_pill():
+    global ser
     dpg.delete_item("index_page")
+    ser = Ardu.connect_to_arduino()
+    time.sleep(2)
     open_once_dosage_page()
     
 
