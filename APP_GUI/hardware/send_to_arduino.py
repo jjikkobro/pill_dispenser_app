@@ -20,4 +20,14 @@ def get_data(curs, user_id):
     return rows
 
 def connect_to_arduino():
-    return serial.Serial('/dev/ttyAMA0', 115200)
+    return serial.Serial('/dev/ttyACM0', 9600, timeout=.1)
+
+def serial_send(ser, number):
+    if number == 1:
+        ser.write(b'1')    
+    elif number == 2:
+        ser.write(b'2')
+    elif number == 3:
+        ser.write(b'3')
+    return True
+    

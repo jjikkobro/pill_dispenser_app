@@ -24,6 +24,8 @@ class Pill_Genine():
       self.silence_duration = 1
         
     def generate_chat_completion(self, messages,  temperature=0.2, max_tokens=None):
+      print(self.gpt_4o_key)
+      print(self.gpt_4o_endpoint)
       post_fields = {
           "messages": messages,
           "response_format":{ "type": "json_object" }
@@ -146,7 +148,7 @@ class Pill_Genine():
         r"일본통|일본동|일번동|일번통": "1번통",
         r"이본통|이번통|이번동|이본동": "2번통",
         r"삼번통|삼본통|삼번동|삼본동": "3번통",
-        r"내일": "매일"
+        r"내일": "매일",
       }
       for pattern, replacement in patterns.items():
             text = re.sub(pattern, replacement, text)

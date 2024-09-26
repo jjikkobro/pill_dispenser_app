@@ -100,11 +100,7 @@ def send_serial(user_data):
     
     if user_data.get("command") == "once":
         container_number = user_data.get('container_number')
-        print(container_number)
-        message = str(container_number).encode()
-        for i in range(1,10):
-            ser.write(message)
-            time.sleep(0.5)
+        Ardu.serial_send(ser, container_number)
             
     elif user_data.get("command") == "period":
         rows = user_data["data"]
@@ -122,11 +118,8 @@ def send_serial(user_data):
                         print(f"사용자: {username}, 약 이름: {medicine}, 약 통 번호: {container}, 시간: {dosing_time}")
                         curs.execute(f"UPDATE notes_note set finished=1 where container={container}")
                         row['finished'] = 1
-                        message = str(container).encode()
-                        for i in range(1, 10):
-                            print(message)
-                            ser.write(message)
-                            time.sleep(0.5)
+                        Ardu.serial_send(ser, container)
+
                     else:
                         continue
                 else:
